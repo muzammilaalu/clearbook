@@ -52,7 +52,7 @@
 
 import axios from "axios";
 
-const API_BASE_URL = "http://localhost:5000";
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -60,7 +60,7 @@ const api = axios.create({
 });
 
 export const authService = {
-  login: () => { window.location.href = "http://localhost:5000/auth/login"; },
+  login: () => { window.location.href = `${API_BASE_URL}/auth/login`; },
   checkAuth: async () => {
     try {
       const response = await api.get("/auth/status");
