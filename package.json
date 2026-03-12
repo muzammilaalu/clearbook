@@ -4,9 +4,10 @@
   "description": "",
   "main": "server.js",
   "scripts": {
+    "start": "node server.js",
     "dev": "node server.js",
     "build": "cd client && npm install && npm run build"
-  },
+},
   "keywords": [],
   "author": "",
   "license": "ISC",
