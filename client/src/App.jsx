@@ -3,7 +3,7 @@ import LoginPage from './Pages/LoginPage';
 import DashboardPage from './Pages/DashboardPage';
 import Loading from './components/Loading';
 import { authService } from './services/api';
-import Footer from './components/footer';
+
 
 
 function App() {
@@ -80,7 +80,7 @@ function App() {
       </div>
 
       {/* Footer */}
-      <Footer />
+      
 
     </div>
   );
