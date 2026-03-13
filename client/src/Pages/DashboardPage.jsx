@@ -1,5 +1,5 @@
 import { useState, useEffect }  from "react";
-import { BookOpen, RefreshCw, CheckCircle, XCircle } from "lucide-react";
+import { BookOpen, RefreshCw, CheckCircle, XCircle, Upload, Download, Building2, ChevronDown } from "lucide-react";
 import AuthButton                from "../components/AuthButton";
 import BusinessList              from "../components/BusinessList";
 import ExportCard                from "../components/ExportCard";
@@ -13,6 +13,10 @@ export default function DashboardPage({ onLogout }) {
   const [loadingBusinesses,  setLoadingBusinesses]  = useState(false);
   const [bulkImporting,      setBulkImporting]      = useState(false);
   const [notification,       setNotification]       = useState(null);
+  const [activeTab,          setActiveTab]          = useState("import");
+  const [showBizDropdown,    setShowBizDropdown]    = useState(false);
+
+  const selectedBusiness = businesses.find(b => b.id === selectedBusinessId);
 
   const showNotification = (type, message) => {
     setNotification({ type, message });
@@ -37,7 +41,6 @@ export default function DashboardPage({ onLogout }) {
     }
   };
 
-  // Single handler for both customers and suppliers
   const handleBulkImport = async (importType, rows, frontendInvalidRows = []) => {
     if (!selectedBusinessId) {
       showNotification("error", "No business selected.");
@@ -59,7 +62,6 @@ export default function DashboardPage({ onLogout }) {
         result.summary.failed === 0 ? "success" : "error",
         `✅ ${result.summary.created} imported, ❌ ${result.summary.failed} failed out of ${result.summary.total}`
       );
-      // Combined error Excel: ClearBooks API errors + frontend validation errors
       const hasApiErrors      = result.failed?.length > 0;
       const hasFrontendErrors = frontendInvalidRows?.length > 0;
       if (hasApiErrors || hasFrontendErrors) {
@@ -75,68 +77,136 @@ export default function DashboardPage({ onLogout }) {
   useEffect(() => { fetchBusinesses(); }, []);
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-50">
 
       {/* Notification */}
       {notification && (
-        <div className={`fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 max-w-md ${
-          notification.type === "success" ? "bg-green-500 text-white" : "bg-red-500 text-white"
+        <div className={`fixed top-4 right-4 z-50 px-5 py-3 rounded-xl shadow-xl flex items-center gap-2 max-w-sm text-sm font-medium ${
+          notification.type === "success" ? "bg-green-600 text-white" : "bg-red-500 text-white"
         }`}>
-          {notification.type === "success" ? <CheckCircle size={20} /> : <XCircle size={20} />}
+          {notification.type === "success" ? <CheckCircle size={18} /> : <XCircle size={18} />}
           {notification.message}
         </div>
       )}
 
       {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
+      <header className="bg-white border-b border-gray-200">
+        <div className="max-w-6xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
+
+            {/* Logo */}
             <div className="flex items-center gap-3">
-              <BookOpen className="text-blue-600" size={32} />
+              <div className="bg-blue-600 p-2 rounded-lg">
+                <BookOpen className="text-white" size={20} />
+              </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">ClearBooks Dashboard</h1>
-                <p className="text-sm text-gray-600">
-                  {selectedBusinessId ? `Business ID: ${selectedBusinessId}` : "Loading..."}
-                </p>
+                <h1 className="text-lg font-bold text-gray-900">ClearBooks</h1>
+                <p className="text-xs text-gray-400">Data Management Tool</p>
               </div>
             </div>
-            <AuthButton isAuthenticated={true} onLogin={() => {}} onLogout={onLogout} />
+
+            {/* Right side: Business dropdown + Logout */}
+            <div className="flex items-center gap-3">
+
+              {/* Business Dropdown */}
+              {businesses.length > 0 && (
+                <div className="relative">
+                  <button
+                    onClick={() => setShowBizDropdown(!showBizDropdown)}
+                    className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm text-gray-700 transition-colors"
+                  >
+                    <Building2 size={14} className="text-gray-500" />
+                    <span className="font-medium">{selectedBusiness?.name || "Select Business"}</span>
+                    <ChevronDown size={13} className="text-gray-400" />
+                  </button>
+
+                  {showBizDropdown && (
+                    <div className="absolute right-0 top-11 bg-white border border-gray-200 rounded-xl shadow-lg z-20 min-w-52">
+                      {businesses.map(b => (
+                        <button
+                          key={b.id}
+                          onClick={() => {
+                            setSelectedBusinessId(b.id);
+                            window.__businessId__ = b.id;
+                            setShowBizDropdown(false);
+                          }}
+                          className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 first:rounded-t-xl last:rounded-b-xl transition-colors ${
+                            b.id === selectedBusinessId ? "text-blue-600 font-semibold bg-blue-50" : "text-gray-700"
+                          }`}
+                        >
+                          {b.name}
+                          <span className="text-xs text-gray-400 ml-1">#{b.id}</span>
+                        </button>
+                      ))}
+                      <div className="border-t border-gray-100 px-3 py-2">
+                        <button
+                          onClick={() => { fetchBusinesses(); setShowBizDropdown(false); }}
+                          className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700"
+                        >
+                          <RefreshCw size={11} className={loadingBusinesses ? "animate-spin" : ""} />
+                          Refresh businesses
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <AuthButton isAuthenticated={true} onLogin={() => {}} onLogout={onLogout} />
+            </div>
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8 space-y-6">
+      {/* Main */}
+      <main className="max-w-6xl mx-auto px-6 py-8">
 
-        {/* Business Selector */}
-        {businesses.length > 1 && (
-          <select
-            value={selectedBusinessId || ""}
-            onChange={(e) => { const id = Number(e.target.value); setSelectedBusinessId(id); window.__businessId__ = id; }}
-            className="px-4 py-2 border border-gray-300 rounded-lg"
+        {/* Tab Bar */}
+        <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-xl p-1 mb-8 w-fit shadow-sm">
+          <button
+            onClick={() => setActiveTab("import")}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${
+              activeTab === "import"
+                ? "bg-blue-600 text-white shadow-sm"
+                : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+            }`}
           >
-            {businesses.map((b) => (
-              <option key={b.id} value={b.id}>{b.name} (ID: {b.id})</option>
-            ))}
-          </select>
-        )}
-
-        {/* Refresh */}
-        <div className="flex gap-4">
-          <button onClick={fetchBusinesses} disabled={loadingBusinesses}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg">
-            <RefreshCw size={18} className={loadingBusinesses ? "animate-spin" : ""} />
-            {loadingBusinesses ? "Loading..." : "Fetch Businesses"}
+            <Upload size={15} />
+            Bulk Import
+          </button>
+          <button
+            onClick={() => setActiveTab("export")}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${
+              activeTab === "export"
+                ? "bg-blue-600 text-white shadow-sm"
+                : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+            }`}
+          >
+            <Download size={15} />
+            Export Data
           </button>
         </div>
 
-        {/* Business List + Export Card */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <BusinessList businesses={businesses} loading={loadingBusinesses} />
-          <ExportCard businessId={selectedBusinessId} showNotification={showNotification} />
-        </div>
+        {/* Connected business indicator */}
+        {selectedBusiness && (
+          <div className="flex items-center gap-2 mb-6 text-sm text-gray-500">
+            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            Connected to <span className="font-medium text-gray-700 ml-1">{selectedBusiness.name}</span>
+            <span className="text-gray-400">· ID: {selectedBusiness.id}</span>
+          </div>
+        )}
 
-        {/* Unified Bulk Import */}
-        <BulkImport onImport={handleBulkImport} loading={bulkImporting} />
+        {/* ── Import Tab (Main / Default) ── */}
+        {activeTab === "import" && (
+          <BulkImport onImport={handleBulkImport} loading={bulkImporting} />
+        )}
+
+        {/* ── Export Tab (Secondary) ── */}
+        {activeTab === "export" && (
+          <div className="max-w-md">
+            <ExportCard businessId={selectedBusinessId} showNotification={showNotification} />
+          </div>
+        )}
 
       </main>
     </div>
