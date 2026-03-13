@@ -30,22 +30,24 @@ export function login(req, res) {
 export async function callback(req, res) {
   const { code, state, error, error_description } = req.query;
 
+  const FRONTEND = process.env.FRONTEND_URL
+
   // Handle ClearBooks error
   if (error) {
     console.error("[Auth] OAuth error:", error, error_description);
-    return res.redirect("http://localhost:5173");
+    return res.redirect(FRONTEND);
   }
 
   // Validate state (CSRF protection)
   if (!state || state !== req.session.oauthState) {
     console.error("[Auth] State mismatch");
-    return res.redirect("http://localhost:5173");
+    return res.redirect(FRONTEND);
   }
 
   // Ensure code exists
   if (!code) {
     console.error("[Auth] Missing authorization code");
-    return res.redirect("http://localhost:5173");
+    return res.redirect(FRONTEND);
   }
 
   try {
@@ -81,13 +83,13 @@ export async function callback(req, res) {
     console.log("[Auth] Access token stored in session.");
 
     // redirect back to frontend dashboard
-    return res.redirect("http://localhost:5173");
+    return res.redirect(FRONTEND);
 
   } catch (err) {
     const details = err.response?.data || err.message;
     console.error("[Auth] Token exchange failed:", details);
 
-    return res.redirect("http://localhost:5173");
+    return res.redirect(FRONTEND);
   }
 }
 
