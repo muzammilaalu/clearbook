@@ -262,6 +262,7 @@ import 'dotenv/config';
 import express  from 'express';
 import session  from 'express-session';
 import cors     from 'cors';
+import MemoryStore from 'memorystore';
 
 // Routes
 import authRoutes        from './src/routes/authRoutes.js';
@@ -306,23 +307,22 @@ app.use(express.urlencoded({ extended: true }));
 //   },
 // }));
 
+const MemStore = MemoryStore(session);
+
 app.use(session({
-  secret:            process.env.SESSION_SECRET || 'dev-secret-change-in-production',
+  secret:            process.env.SESSION_SECRET || 'dev-secret',
   resave:            false,
   saveUninitialized: false,
+  store: new MemStore({ checkPeriod: 86400000 }),
   cookie: {
-    secure:   process.env.NODE_ENV === 'production',  // ← FIX
+    secure:   process.env.NODE_ENV === 'production',
     httpOnly: true,
-    sameSite: 'none',                                  // ← ADD
+    sameSite: 'none',
     maxAge:   3600000,
   },
 }));
 
-```
 
-Aur Render Dashboard mein ek variable aur add karo:
-```
-NODE_ENV = production
 
 // ---------------------------------------------------------------------------
 // Mount Routes
