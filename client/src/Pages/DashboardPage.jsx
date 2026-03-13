@@ -3,7 +3,7 @@ import { BookOpen, RefreshCw, CheckCircle, XCircle, Upload, Download, Building2,
 import AuthButton                from "../components/AuthButton";
 import ExportCard                from "../components/ExportCard";
 import BulkImport                from "../components/BulkImport";
-import { exportAllErrors }       from "../utils/exportAllErrors";
+import { exportAllErrors }       from "../components/utils/exportAllErrors";
 import { businessService, customerService, supplierService, stockItemService, journalService } from "../services/api";
 
 export default function DashboardPage({ onLogout }) {
