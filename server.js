@@ -296,18 +296,9 @@ app.use(express.urlencoded({ extended: true }));
 // ---------------------------------------------------------------------------
 // Session
 // ---------------------------------------------------------------------------
-// app.use(session({
-//   secret:            process.env.SESSION_SECRET || 'dev-secret-change-in-production',
-//   resave:            false,
-//   saveUninitialized: false,
-//   cookie: {
-//     secure:   false,   // set true with HTTPS in production
-//     httpOnly: true,
-//     maxAge:   3600000, // 1 hour
-//   },
-// }));
 
 const MemStore = MemoryStore(session);
+app.set('trust proxy', 1);
 
 app.use(session({
   secret:            process.env.SESSION_SECRET || 'dev-secret',
@@ -315,7 +306,7 @@ app.use(session({
   saveUninitialized: false,
   store: new MemStore({ checkPeriod: 86400000 }),
   cookie: {
-    secure:   process.env.NODE_ENV === 'production',
+    secure:  true,
     httpOnly: true,
     sameSite: 'none',
     maxAge:   3600000,
