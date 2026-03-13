@@ -83,7 +83,7 @@ export async function callback(req, res) {
     console.log("[Auth] Access token stored in session.");
 
     // redirect back to frontend dashboard
-    return res.redirect(FRONTEND);
+    return res.redirect(`${FRONTEND}/dashboard`);
 
   } catch (err) {
     const details = err.response?.data || err.message;

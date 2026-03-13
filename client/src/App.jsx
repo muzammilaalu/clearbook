@@ -5,6 +5,10 @@ import Loading from './components/Loading';
 import { authService } from './services/api';
 
 
+// my code 
+
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -76,7 +80,11 @@ function App() {
       
       {/* Main Content */}
       <div className="flex-grow">
-        <DashboardPage onLogout={handleLogout} />
+       <BrowserRouter>
+       <Routes>
+        <Route to='dashboard' element={<DashboardPage onLogout={handleLogout}/>}/>
+        </Routes>
+        </BrowserRouter>
       </div>
 
       {/* Footer */}
