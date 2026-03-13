@@ -295,16 +295,33 @@ app.use(express.urlencoded({ extended: true }));
 // ---------------------------------------------------------------------------
 // Session
 // ---------------------------------------------------------------------------
+// app.use(session({
+//   secret:            process.env.SESSION_SECRET || 'dev-secret-change-in-production',
+//   resave:            false,
+//   saveUninitialized: false,
+//   cookie: {
+//     secure:   false,   // set true with HTTPS in production
+//     httpOnly: true,
+//     maxAge:   3600000, // 1 hour
+//   },
+// }));
+
 app.use(session({
   secret:            process.env.SESSION_SECRET || 'dev-secret-change-in-production',
   resave:            false,
   saveUninitialized: false,
   cookie: {
-    secure:   false,   // set true with HTTPS in production
+    secure:   process.env.NODE_ENV === 'production',  // ← FIX
     httpOnly: true,
-    maxAge:   3600000, // 1 hour
+    sameSite: 'none',                                  // ← ADD
+    maxAge:   3600000,
   },
 }));
+```
+
+Aur Render Dashboard mein ek variable aur add karo:
+```
+NODE_ENV = production
 
 // ---------------------------------------------------------------------------
 // Mount Routes
