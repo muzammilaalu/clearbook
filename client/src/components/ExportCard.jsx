@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Download, FileSpreadsheet, ChevronDown } from "lucide-react";
 import * as XLSX from "xlsx";
-import { customerService, supplierService, stockItemService, accountCodeService, bankAccountService } from "../services/api";
+import { customerService, supplierService, stockItemService, accountCodeService, bankAccountService, salesService } from "../services/api";
 
 export default function ExportCard({ businessId, showNotification }) {
   const [selected,    setSelected]    = useState("customers");
@@ -9,12 +9,12 @@ export default function ExportCard({ businessId, showNotification }) {
   const [open,        setOpen]        = useState(false);
 
   const options = [
-   
-    { value: "customers",   label: "Customers",    color: "green"  },
-    { value: "suppliers",   label: "Suppliers",    color: "purple" },
-    { value: "stockItems",  label: "Stock Items",  color: "orange" },
-    { value: "accountCodes",  label: "Account Codes",  color: "teal"  },
-    { value: "bankAccounts",   label: "Bank Accounts",  color: "indigo"},
+    { value: "customers",         label: "Customers",           color: "green"  },
+    { value: "suppliers",         label: "Suppliers",           color: "purple" },
+    { value: "stockItems",        label: "Stock Items",         color: "orange" },
+    { value: "accountCodes",      label: "Account Codes",       color: "teal"   },
+    { value: "bankAccounts",      label: "Bank Accounts",       color: "indigo" },
+    { value: "salesAttachments",  label: "Sales Attachments",   color: "rose"   },
   ];
 
   const current = options.find((o) => o.value === selected);
@@ -24,6 +24,7 @@ export default function ExportCard({ businessId, showNotification }) {
     current?.color === "purple" ? "bg-purple-600 hover:bg-purple-700" :
     current?.color === "orange" ? "bg-orange-600 hover:bg-orange-700" :
     current?.color === "teal"   ? "bg-teal-600 hover:bg-teal-700"     :
+    current?.color === "rose"   ? "bg-rose-600 hover:bg-rose-700"     :
                                   "bg-indigo-600 hover:bg-indigo-700";
 
   const dotClass =
@@ -31,17 +32,18 @@ export default function ExportCard({ businessId, showNotification }) {
     current?.color === "purple" ? "bg-purple-500" :
     current?.color === "orange" ? "bg-orange-500" :
     current?.color === "teal"   ? "bg-teal-500"   :
+    current?.color === "rose"   ? "bg-rose-500"   :
                                   "bg-indigo-500";
-                                  
 
   const iconClass =
     current?.color === "green"  ? "text-green-600"  :
     current?.color === "purple" ? "text-purple-600" :
     current?.color === "orange" ? "text-orange-600" :
     current?.color === "teal"   ? "text-teal-600"   :
+    current?.color === "rose"   ? "text-rose-600"   :
                                   "text-indigo-600";
 
-  // ── Row builders ─────────────────────────────────────────────────────────
+  // ── Row builders ──────────────────────────────────────────────────────────
   const buildCustomerRows = (data) => data.map((c) => ({
     id:                   c.id || '',
     company_name:         c.name || '',
@@ -141,9 +143,22 @@ export default function ExportCard({ businessId, showNotification }) {
     iban:           b.iban || '',
     swift:          b.swift || '',
     currency:       b.currency || '',
-    payment_methods:Array.isArray(b.paymentMethods)
+    payment_methods: Array.isArray(b.paymentMethods)
                       ? b.paymentMethods.map(p => p.name).join(', ')
                       : '',
+  }));
+
+  const buildSalesAttachmentRows = (data) => data.map((a) => ({
+    invoice_id:       a.invoice_id || '',
+    invoice_ref:      a.invoice_ref || '',
+    invoice_date:     a.invoice_date || '',
+    invoice_due_date: a.invoice_due_date || '',
+    invoice_total:    a.invoice_total ?? '',
+    invoice_status:   a.invoice_status || '',
+    attachment_id:    a.att_id || '',
+    attachment_name:  a.att_name || '',
+    attachment_size:  a.att_size ?? '',
+    date_uploaded:    a.att_uploaded || '',
   }));
 
   const colWidths = [
@@ -159,11 +174,12 @@ export default function ExportCard({ businessId, showNotification }) {
     setDownloading(true);
     try {
       let data;
-      if      (selected === "customers")    data = await customerService.exportCustomers(businessId);
-      else if (selected === "suppliers")    data = await supplierService.exportSuppliers(businessId);
-      else if (selected === "stockItems")   data = await stockItemService.exportStockItems(businessId);
-      else if (selected === "accountCodes")  data = await accountCodeService.fetchAccountCodes(businessId);
-      else                                   data = await bankAccountService.fetchBankAccounts(businessId);
+      if      (selected === "customers")        data = await customerService.exportCustomers(businessId);
+      else if (selected === "suppliers")        data = await supplierService.exportSuppliers(businessId);
+      else if (selected === "stockItems")       data = await stockItemService.exportStockItems(businessId);
+      else if (selected === "accountCodes")     data = await accountCodeService.fetchAccountCodes(businessId);
+      else if (selected === "bankAccounts")     data = await bankAccountService.fetchBankAccounts(businessId);
+      else if (selected === "salesAttachments") data = await salesService.fetchSalesAttachments(businessId);
 
       if (!data || data.length === 0) {
         showNotification("error", `No ${current.label} found to export.`);
@@ -171,25 +187,30 @@ export default function ExportCard({ businessId, showNotification }) {
       }
 
       const rows =
-        selected === "customers"    ? buildCustomerRows(data)    :
-        selected === "suppliers"    ? buildSupplierRows(data)    :
-        selected === "stockItems"   ? buildStockItemRows(data)   :
-        selected === "accountCodes" ? buildAccountCodeRows(data) :
-                                      buildBankAccountRows(data);
+        selected === "customers"        ? buildCustomerRows(data)          :
+        selected === "suppliers"        ? buildSupplierRows(data)          :
+        selected === "stockItems"       ? buildStockItemRows(data)         :
+        selected === "accountCodes"     ? buildAccountCodeRows(data)       :
+        selected === "bankAccounts"     ? buildBankAccountRows(data)       :
+                                          buildSalesAttachmentRows(data);
 
-      const sheetName   =
-        selected === "customers"    ? "Customers"     :
-        selected === "suppliers"    ? "Suppliers"     :
-        selected === "stockItems"   ? "Stock Items"   :
-        selected === "accountCodes" ? "Account Codes" : "Bank Accounts";
+      const sheetName =
+        selected === "customers"        ? "Customers"          :
+        selected === "suppliers"        ? "Suppliers"          :
+        selected === "stockItems"       ? "Stock Items"        :
+        selected === "accountCodes"     ? "Account Codes"      :
+        selected === "bankAccounts"     ? "Bank Accounts"      :
+                                          "Sales Attachments";
 
-      const fileName    = `${selected}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      const fileName = `${selected}_${new Date().toISOString().slice(0, 10)}.xlsx`;
 
       const headerColor =
-        selected === "customers"    ? "1F4E79" :
-        selected === "suppliers"    ? "6B21A8" :
-        selected === "stockItems"   ? "C2410C" :
-        selected === "accountCodes" ? "0F766E" : "3730A3";
+        selected === "customers"        ? "1F4E79" :
+        selected === "suppliers"        ? "6B21A8" :
+        selected === "stockItems"       ? "C2410C" :
+        selected === "accountCodes"     ? "0F766E" :
+        selected === "bankAccounts"     ? "3730A3" :
+                                          "9F1239";
 
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.json_to_sheet(rows);
@@ -217,12 +238,12 @@ export default function ExportCard({ businessId, showNotification }) {
     }
   };
 
-  // ── Dropdown dot color helper ─────────────────────────────────────────────
   const getDotClass = (color) =>
     color === "green"  ? "bg-green-500"  :
     color === "purple" ? "bg-purple-500" :
     color === "orange" ? "bg-orange-500" :
     color === "teal"   ? "bg-teal-500"   :
+    color === "rose"   ? "bg-rose-500"   :
                          "bg-indigo-500";
 
   return (

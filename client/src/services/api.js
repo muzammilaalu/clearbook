@@ -49,7 +49,6 @@
 // };
 
 
-
 import axios from "axios";
 
 const API_BASE_URL = "https://clearbook-backend-f9e8.onrender.com"
@@ -84,18 +83,14 @@ export const customerService = {
     });
     return response.data.data ?? response.data;
   },
-
   createCustomer: async (data) => {
     const response = await api.post("/customers", data);
     return response.data.data ?? response.data;
   },
-
   bulkCreateCustomers: async (businessId, customers) => {
     const response = await api.post("/customers/bulk", { businessId, customers });
     return response.data;
   },
-
-  // Saare customers export karo (for Excel download)
   exportCustomers: async (businessId) => {
     const response = await api.get("/customers/export", {
       params: businessId ? { businessId } : {},
@@ -111,17 +106,14 @@ export const supplierService = {
     });
     return response.data.data ?? response.data;
   },
-
   createSupplier: async (data) => {
     const response = await api.post("/suppliers", data);
     return response.data.data ?? response.data;
   },
-
   bulkCreateSuppliers: async (businessId, suppliers) => {
     const response = await api.post("/suppliers/bulk", { businessId, suppliers });
     return response.data;
   },
-
   exportSuppliers: async (businessId) => {
     const response = await api.get("/suppliers/export", {
       params: businessId ? { businessId } : {},
@@ -137,17 +129,14 @@ export const stockItemService = {
     });
     return response.data.data ?? response.data;
   },
-
   createStockItem: async (data) => {
     const response = await api.post("/stock-items", data);
     return response.data.data ?? response.data;
   },
-
   bulkCreateStockItems: async (businessId, stockItems) => {
     const response = await api.post("/stock-items/bulk", { businessId, stockItems });
     return response.data;
   },
-
   exportStockItems: async (businessId) => {
     const response = await api.get("/stock-items/export", {
       params: businessId ? { businessId } : {},
@@ -184,5 +173,22 @@ export const journalService = {
   bulkCreateJournals: async (journals, businessId) => {
     const response = await api.post("/journals/bulk", { journals, businessId });
     return response.data;
+  },
+};
+
+// ── NEW: Sales Service ────────────────────────────────────────────────────
+export const salesService = {
+  fetchSales: async (businessId, type = 'invoices') => {
+    const response = await api.get("/sales", {
+      params: { businessId, type },
+    });
+    return response.data.data ?? response.data;
+  },
+
+  fetchSalesAttachments: async (businessId) => {
+    const response = await api.get("/sales/attachments", {
+      params: { businessId },
+    });
+    return response.data.data ?? response.data;
   },
 };
