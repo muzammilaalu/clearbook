@@ -1,51 +1,46 @@
+import { Info } from "lucide-react";
+
 export default function BulkColumnInfo({ importType, config }) {
+
+  if (!config || !config.requiredColumns) return null;
+
   return (
-    /* Column info */
-    <div className={`mt-3 p-3 rounded-lg text-sm ${config.infoBg}`}>
-      <span className="font-semibold">Expected columns:</span>{' '}
-      {importType === 'stockItems' ? (
-        <>
-          <code>name</code> (required) ·
-          <code> type</code> (purchases/sales/both, required) ·
-          <code> sku</code> ·
-          <code> description</code> ·
-          <code> sale_price</code> ·
-          <code> sale_vat_rate</code> ·
-          <code> sale_qty</code> ·
-          <code> sales_account</code> ·
-          <code> cost_price</code> ·
-          <code> purchases_vat_rate</code> ·
-          <code> purchases_qty</code> ·
-          <code> purchases_account</code> ·
-          <code> is_stock_item</code>
-        </>
-      ) : importType === 'journals' ? (
-        <>
-          <code>journal_ref</code> (group lines by this) ·
-          <code> accounting_date</code> (required, YYYY-MM-DD) ·
-          <code> description</code> ·
-          <code> account_code</code> (required, integer ID) ·
-          <code> amount</code> (required — debits +ve, credits -ve, sum must = 0 per journal) ·
-          <code> line_description</code>
-          <div className="mt-1 text-blue-700 font-medium">
-            💡 Each journal_ref groups multiple lines into one journal entry. Lines sum must = 0.
-          </div>
-        </>
-      ) : (
-        <>
-          <code>company_name</code> (required) ·
-          <code> contact_name</code> ·
-          <code> email</code> ·
-          <code> phone1</code> ·
-          <code> vat_number</code> ·
-          <code> building</code> ·
-          <code> address1</code> ·
-          <code> town</code> ·
-          <code> county</code> ·
-          <code> postcode</code> ·
-          <code> country</code>
-        </>
+    <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mt-4">
+
+      <div className="flex items-start gap-2 mb-3">
+        <Info className="text-slate-600 flex-shrink-0 mt-0.5" size={18} />
+
+        <div>
+          <h3 className="font-semibold text-slate-900 text-sm mb-1">
+            Required Columns
+          </h3>
+
+          <p className="text-xs text-slate-600">
+            Your file must include these column headers.
+          </p>
+        </div>
+      </div>
+
+      {/* Column chips */}
+      <div className="flex flex-wrap gap-2">
+        {config.requiredColumns.map((col, idx) => (
+          <span
+            key={idx}
+            className="px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-mono text-slate-800 shadow-sm"
+          >
+            {col}
+          </span>
+        ))}
+      </div>
+
+      {/* Special help for journals */}
+      {importType === "journals" && (
+        <div className="mt-3 text-blue-700 text-xs font-medium bg-blue-50 border border-blue-200 p-3 rounded-lg">
+          💡 Each <code>journal_ref</code> groups multiple lines into one journal entry.
+          Total of all <code>amount</code> values must equal <strong>0</strong>.
+        </div>
       )}
+
     </div>
   );
 }

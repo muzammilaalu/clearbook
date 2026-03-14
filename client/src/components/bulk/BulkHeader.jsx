@@ -1,26 +1,66 @@
-import { FileSpreadsheet, ChevronDown } from 'lucide-react';
+import { ChevronDown } from "lucide-react";
+import { useState } from "react";
 
 export default function BulkHeader({ importType, config, onTypeChange }) {
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  const types = [
+    { value: "customers", label: "Customers", color: "bg-green-50 text-green-700 border-green-200" },
+    { value: "suppliers", label: "Suppliers", color: "bg-blue-50 text-blue-700 border-blue-200" },
+    { value: "stockItems", label: "Stock Items", color: "bg-orange-50 text-orange-700 border-orange-200" },
+    { value: "journals", label: "Journals", color: "bg-teal-50 text-teal-700 border-teal-200" }
+  ];
+
+  const currentType = types.find(t => t.value === importType) || types[0];
+
   return (
-    /* Header + Type Selector */
-    <div className="flex items-center justify-between mb-5">
-      <h2 className="text-xl font-semibold flex items-center gap-2">
-        <FileSpreadsheet size={24} className={`text-${config.color}-600`} />
+    <div className="mb-6">
+
+      <h2 className="text-xl font-bold text-gray-900 mb-2">
         Bulk Import
       </h2>
+
+      <p className="text-sm text-gray-600 mb-4">
+        Select the type of data you want to import
+      </p>
+
       <div className="relative">
-        <select
-          value={importType}
-          onChange={(e) => onTypeChange(e.target.value)}
-          className={`appearance-none pl-4 pr-10 py-2 border-2 border-${config.color}-300 rounded-lg font-medium text-${config.color}-700 bg-${config.color}-50 focus:outline-none focus:ring-2 focus:ring-${config.color}-400 cursor-pointer`}
+
+        <button
+          onClick={() => setShowDropdown(!showDropdown)}
+          className={`flex items-center justify-between w-full md:w-80 px-4 py-3 rounded-xl border-2 font-medium transition-all shadow-sm ${currentType.color}`}
         >
-          <option value="customers">Customers</option>
-          <option value="suppliers">Suppliers</option>
-          <option value="stockItems">Stock Items</option>
-          <option value="journals">Journals</option>
-        </select>
-        <ChevronDown size={16} className={`absolute right-3 top-3 text-${config.color}-500 pointer-events-none`} />
+          <span>Import {currentType.label}</span>
+
+          <ChevronDown
+            size={18}
+            className={`transition-transform ${showDropdown ? "rotate-180" : ""}`}
+          />
+        </button>
+
+        {showDropdown && (
+          <div className="absolute top-full left-0 mt-2 w-full md:w-80 bg-white border border-gray-200 rounded-xl shadow-xl z-20 overflow-hidden">
+
+            {types.map(type => (
+              <button
+                key={type.value}
+                onClick={() => {
+                  onTypeChange(type.value);
+                  setShowDropdown(false);
+                }}
+                className={`w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0 ${
+                  importType === type.value ? "bg-gray-50 font-semibold" : ""
+                }`}
+              >
+                {type.label}
+              </button>
+            ))}
+
+          </div>
+        )}
+
       </div>
+
     </div>
   );
 }

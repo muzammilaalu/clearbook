@@ -1,48 +1,66 @@
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle } from "lucide-react";
 
-export default function BulkInvalidTable({ invalidRows, importType }) {
+export default function BulkInvalidTable({ invalidRows = [], importType }) {
+  if (!invalidRows.length) return null;
+
   return (
-    /* Invalid rows table */
-    <div className="mt-4 border border-red-200 rounded-lg overflow-hidden">
-      <div className="bg-red-50 px-4 py-2 flex items-center justify-between">
-        <p className="font-semibold text-red-700 flex items-center gap-1">
-          <AlertCircle size={16} /> Invalid Rows — will NOT be imported
+    <div className="bg-white rounded-xl shadow-md border border-red-200 overflow-hidden">
+
+      <div className="bg-red-50 px-6 py-4 border-b border-red-200">
+        <div className="flex items-center gap-2">
+          <AlertCircle className="text-red-600" size={20} />
+          <h3 className="font-semibold text-red-900">Invalid Rows</h3>
+        </div>
+
+        <p className="text-sm text-red-700 mt-1">
+          These rows have validation errors and will not be imported
         </p>
-        <span className="text-xs text-red-500 italic">
-          These rows will be included in the error Excel after import
-        </span>
       </div>
-      <div className="overflow-x-auto max-h-48 text-sm">
-        <table className="w-full">
-          <thead className="bg-red-50">
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+
+          <thead className="bg-red-100 border-b border-red-200">
             <tr>
-              {['Row #', 'Name', 'Errors Found'].map(h => (
-                <th key={h} className="px-3 py-2 text-left text-red-700 font-medium">{h}</th>
-              ))}
+              <th className="px-4 py-3 text-left font-semibold text-red-900">
+                Row #
+              </th>
+
+              <th className="px-4 py-3 text-left font-semibold text-red-900">
+                Errors
+              </th>
             </tr>
           </thead>
-          <tbody>
-            {invalidRows.map(({ row, errors }, i) => (
-              <tr key={i} className="border-t border-red-100">
-                <td className="px-3 py-2 text-gray-500">{row._rowNum || '—'}</td>
-                <td className="px-3 py-2 font-medium">
-                  {importType === 'journals'
-                    ? (row.journal_ref || row.accounting_date || '(empty)')
-                    : (row.name || '(empty)')
-                  }
+
+          <tbody className="divide-y divide-gray-200">
+            {invalidRows.map((item, idx) => (
+
+              <tr key={idx} className="hover:bg-red-50">
+
+                <td className="px-4 py-3 text-gray-700">
+                  {item?.row?.row_number || idx + 1}
                 </td>
-                <td className="px-3 py-2">
-                  {errors.map((err, j) => (
-                    <span key={j} className="inline-block bg-red-100 text-red-700 text-xs px-2 py-0.5 rounded mr-1 mb-1">
-                      {err}
-                    </span>
-                  ))}
+
+                <td className="px-4 py-3">
+                  <ul className="space-y-1">
+
+                    {item?.errors?.map((err, i) => (
+                      <li key={i} className="text-red-700 text-xs">
+                        • {err}
+                      </li>
+                    ))}
+
+                  </ul>
                 </td>
+
               </tr>
+
             ))}
           </tbody>
+
         </table>
       </div>
+
     </div>
   );
 }

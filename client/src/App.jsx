@@ -69,7 +69,7 @@ function App() {
   }
 
   if (!isAuthenticated) {
-    return <LoginPage onLogin={handleLogin} />;
+    return <LoginPage onLogin={handleLogin} loading={isAuthenticating} />;
   }
 
   return (
