@@ -72,9 +72,9 @@ export async function getSalesAttachments(req, res) {
             return attachments.map(att => ({
               invoice_id:       inv.id,
               invoice_ref:      inv.reference || inv.ref || '',
-              invoice_date:     inv.invoiceDate || inv.invoice_date || '',
+              invoice_date:     inv.date || inv.invoiceDate || '',
               invoice_due_date: inv.dueDate || inv.due_date || '',
-              invoice_total:    inv.total ?? '',
+              invoice_total:    inv.gross ?? inv.total ?? '',
               invoice_status:   inv.status || '',
               att_id:           att.id,
               att_name:         att.name || '',
