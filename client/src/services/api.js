@@ -48,7 +48,6 @@
 //   },
 // };
 
-
 import axios from "axios";
 
 const API_BASE_URL = "https://clearbook-backend-f9e8.onrender.com"
@@ -190,5 +189,13 @@ export const salesService = {
       params: { businessId },
     });
     return response.data.data ?? response.data;
+  },
+
+  uploadSalesAttachments: async (businessId, rows) => {
+    const response = await api.post(
+      `/sales/attachments/upload?businessId=${businessId}`,
+      { rows }
+    );
+    return response.data;
   },
 };

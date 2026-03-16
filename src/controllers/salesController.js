@@ -72,9 +72,9 @@ export async function getSalesAttachments(req, res) {
             return attachments.map(att => ({
               invoice_id:       inv.id,
               invoice_ref:      inv.reference || inv.ref || '',
-              invoice_date:     inv.date || inv.invoiceDate || '',
+              invoice_date:     inv.invoiceDate || inv.invoice_date || '',
               invoice_due_date: inv.dueDate || inv.due_date || '',
-              invoice_total:    inv.gross ?? inv.total ?? '',
+              invoice_total:    inv.total ?? '',
               invoice_status:   inv.status || '',
               att_id:           att.id,
               att_name:         att.name || '',
@@ -94,6 +94,86 @@ export async function getSalesAttachments(req, res) {
   } catch (err) {
     const { status, message } = parseAxiosError(err);
     console.error('[Sales] getSalesAttachments error:', message);
+    return res.status(status).json({ success: false, error: message });
+  }
+}
+
+// ── POST /sales/attachments/upload ────────────────────────────────────────
+// Upload files to invoices by matching invoice_ref
+// Body: { rows: [{ invoice_ref, file_name, file_data_base64 }] }
+// Query: ?businessId=xxx
+export async function uploadSalesAttachment(req, res) {
+  const { businessId } = req.query;
+  const { rows } = req.body;
+
+  if (!businessId)
+    return res.status(400).json({ success: false, error: 'businessId is required' });
+  if (!Array.isArray(rows) || rows.length === 0)
+    return res.status(400).json({ success: false, error: 'rows array is required' });
+
+  try {
+    const api = getApiClient(req.session.accessToken, businessId);
+
+    // Step 1 — fetch all invoices to build ref → id map
+    const { data: salesData } = await api.get('/accounting/sales/invoices', {
+      params: { limit: 200, page: 1 },
+    });
+    const invoices = Array.isArray(salesData) ? salesData : (salesData?.data ?? []);
+
+    const refMap = {};
+    invoices.forEach(inv => {
+      if (inv.reference)               refMap[inv.reference.trim()]               = inv.id;
+      if (inv.formattedDocumentNumber) refMap[inv.formattedDocumentNumber.trim()] = inv.id;
+      if (inv.documentNumber)          refMap[inv.documentNumber.trim()]           = inv.id;
+      refMap[String(inv.id)] = inv.id;
+    });
+
+    // Step 2 — upload each file
+    const summary = { total: rows.length, created: 0, failed: 0 };
+    const errors  = [];
+
+    for (const row of rows) {
+      const { invoice_ref, file_name, file_data_base64 } = row;
+
+      if (!invoice_ref || !file_name || !file_data_base64) {
+        summary.failed++;
+        errors.push({ invoice_ref, file_name, error: 'Missing required fields' });
+        continue;
+      }
+
+      const invoiceId = refMap[invoice_ref?.toString().trim()];
+      if (!invoiceId) {
+        summary.failed++;
+        errors.push({ invoice_ref, file_name, error: `Invoice not found for ref: ${invoice_ref}` });
+        continue;
+      }
+
+      try {
+        const fileBuffer = Buffer.from(file_data_base64, 'base64');
+        const safeName   = encodeURIComponent(file_name);
+
+        await api.post(
+          `/accounting/sales/invoices/${invoiceId}/attachments/${safeName}`,
+          fileBuffer,
+          {
+            headers: {
+              'Content-Type':   'application/octet-stream',
+              'Content-Length': fileBuffer.length,
+            },
+          }
+        );
+        summary.created++;
+      } catch (err) {
+        const { message } = parseAxiosError(err);
+        summary.failed++;
+        errors.push({ invoice_ref, file_name, error: message });
+      }
+    }
+
+    return res.status(200).json({ success: true, summary, errors });
+
+  } catch (err) {
+    const { status, message } = parseAxiosError(err);
     return res.status(status).json({ success: false, error: message });
   }
 }

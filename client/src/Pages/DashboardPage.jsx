@@ -321,12 +321,16 @@ export default function DashboardPage({ onLogout }) {
 
         {/* Import Tab */}
         {activeTab === "import" && (
-          <div>
-            <div className="mb-6">
+          <div className="space-y-6">
+            <div className="mb-2">
               <h3 className="text-xl font-bold text-gray-900 mb-1">Data Import</h3>
               <p className="text-gray-500 text-sm">Upload Excel or CSV files to bulk import data into your ClearBooks account</p>
             </div>
             <BulkImport onImport={handleBulkImport} loading={bulkImporting} />
+            <SalesAttachmentUpload
+              businessId={selectedBusinessId}
+              showNotification={showNotification}
+            />
           </div>
         )}
 
