@@ -8,6 +8,7 @@ import ExportCard from "../components/ExportCard";
 import BulkImport from "../components/BulkImport";
 import { exportAllErrors } from "../components/utils/exportAllErrors";
 import { businessService, customerService, supplierService, stockItemService, journalService } from "../services/api";
+import SalesAttachmentUpload from "../components/SalesAttachmentUpload";
 
 // ── localStorage helpers ──────────────────────────────────────────────────
 const STATS_KEY = 'cb_dashboard_stats';
