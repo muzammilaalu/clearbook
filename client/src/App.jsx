@@ -3,7 +3,7 @@ import LoginPage from './Pages/LoginPage';
 import DashboardPage from './Pages/DashboardPage';
 import Loading from './components/Loading';
 import { authService } from './services/api';
-import Footer from './components/footer';
+import Bottum from "./components/Bottum"
 
 
 
@@ -82,7 +82,7 @@ function App() {
       </div>
 
       {/* Footer */
-      <Footer/>
+        <Bottum/>
       }
       
 

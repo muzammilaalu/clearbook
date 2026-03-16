@@ -1,6 +1,6 @@
 import { Github } from 'lucide-react';
 
-export default function Footer() {
+export default function Bottum() {
   const currentYear = new Date().getFullYear();
 
   return (
