@@ -77,9 +77,10 @@ export default function SalesAttachmentUpload({ businessId, showNotification }) 
 
     try {
       const payload = readyRows.map(r => ({
-        invoice_ref:      r.invoice_ref,
-        file_name:        r.file_name,
-        file_data_base64: r.file_data_base64,
+        invoice_ref:      r.invoice_ref || r.invoice_ref,
+        file_name:        r.file_name || r.att_name || r.attachment_name,
+        file_data_base64: r.file_data_base64 || '',
+        date_uploaded:    r.att_uploaded || '',
       }));
 
       const result = await salesService.uploadSalesAttachments(businessId, payload);
