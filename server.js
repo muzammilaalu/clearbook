@@ -257,13 +257,12 @@
 
 // server.js
 // ClearBooks API Backend — ES Module, structured with controllers & routes
-// server.js
-// ClearBooks API Backend — ES Module, structured with controllers & routes
 
 import 'dotenv/config';
 import express  from 'express';
 import session  from 'express-session';
 import cors     from 'cors';
+import MemoryStore from 'memorystore';
 
 // Routes
 import authRoutes        from './src/routes/authRoutes.js';
@@ -284,7 +283,7 @@ const PORT = process.env.PORT || 5000;
 // CORS
 // ---------------------------------------------------------------------------
 app.use(cors({
-  origin:      process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin:      process.env.FRONTEND_URL || 'https://clearbook.onrender.com',
   credentials: true,
 }));
 
@@ -297,16 +296,24 @@ app.use(express.urlencoded({ extended: true }));
 // ---------------------------------------------------------------------------
 // Session
 // ---------------------------------------------------------------------------
+
+const MemStore = MemoryStore(session);
+app.set('trust proxy', 1);
+
 app.use(session({
-  secret:            process.env.SESSION_SECRET || 'dev-secret-change-in-production',
+  secret:            process.env.SESSION_SECRET || 'dev-secret',
   resave:            false,
   saveUninitialized: false,
+  store: new MemStore({ checkPeriod: 86400000 }),
   cookie: {
-    secure:   false,   // set true with HTTPS in production
+    secure:  true,
     httpOnly: true,
-    maxAge:   3600000, // 1 hour
+    sameSite: 'none',
+    maxAge:   3600000,
   },
 }));
+
+
 
 // ---------------------------------------------------------------------------
 // Mount Routes
@@ -361,7 +368,7 @@ app.use((err, req, res, _next) => {
 // ---------------------------------------------------------------------------
 // Start
 // ---------------------------------------------------------------------------
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT,'0.0.0.0', () => {
   console.log('');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log('  ClearBooks API Backend');
