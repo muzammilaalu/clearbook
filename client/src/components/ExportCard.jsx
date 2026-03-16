@@ -3,45 +3,45 @@ import { Download, FileSpreadsheet, ChevronDown, Info, TrendingUp } from "lucide
 import * as XLSX from "xlsx";
 import { customerService, supplierService, stockItemService, accountCodeService, bankAccountService, salesService } from "../services/api";
 
-export default function ExportCard({ businessId, showNotification, onExport }) {
+export default function ExportCard({ businessId, showNotification, onExport, onExportDone }) {
   const [selected, setSelected] = useState("customers");
   const [downloading, setDownloading] = useState(false);
   const [open, setOpen] = useState(false);
 
   const options = [
-    { value: "customers", label: "Customers", color: "green", desc: "Export all customer records with contact details" },
-    { value: "suppliers", label: "Suppliers", color: "blue", desc: "Export supplier information and addresses" },
-    { value: "stockItems", label: "Stock Items", color: "orange", desc: "Export inventory with pricing and quantities" },
-    { value: "accountCodes", label: "Account Codes", color: "teal", desc: "Export chart of accounts structure" },
-    { value: "bankAccounts", label: "Bank Accounts", color: "slate", desc: "Export bank account details and settings" },
-    { value: "salesAttachments", label: "Sales Attachments", color: "rose", desc: "Export sales invoice attachments list" },
+    { value: "customers",        label: "Customers",         color: "green",  desc: "Export all customer records with contact details" },
+    { value: "suppliers",        label: "Suppliers",         color: "blue",   desc: "Export supplier information and addresses" },
+    { value: "stockItems",       label: "Stock Items",       color: "orange", desc: "Export inventory with pricing and quantities" },
+    { value: "accountCodes",     label: "Account Codes",     color: "teal",   desc: "Export chart of accounts structure" },
+    { value: "bankAccounts",     label: "Bank Accounts",     color: "slate",  desc: "Export bank account details and settings" },
+    { value: "salesAttachments", label: "Sales Attachments", color: "rose",   desc: "Export sales invoice attachments list" },
   ];
 
   const current = options.find((o) => o.value === selected);
 
   const btnClass =
-    current?.color === "green" ? "bg-green-600 hover:bg-green-700" :
-    current?.color === "blue" ? "bg-blue-600 hover:bg-blue-700" :
+    current?.color === "green"  ? "bg-green-600 hover:bg-green-700"   :
+    current?.color === "blue"   ? "bg-blue-600 hover:bg-blue-700"     :
     current?.color === "orange" ? "bg-orange-600 hover:bg-orange-700" :
-    current?.color === "teal" ? "bg-teal-600 hover:bg-teal-700" :
-    current?.color === "rose" ? "bg-rose-600 hover:bg-rose-700" :
-    "bg-slate-600 hover:bg-slate-700";
+    current?.color === "teal"   ? "bg-teal-600 hover:bg-teal-700"     :
+    current?.color === "rose"   ? "bg-rose-600 hover:bg-rose-700"     :
+                                  "bg-slate-600 hover:bg-slate-700";
 
   const dotClass =
-    current?.color === "green" ? "bg-green-500" :
-    current?.color === "blue" ? "bg-blue-500" :
+    current?.color === "green"  ? "bg-green-500"  :
+    current?.color === "blue"   ? "bg-blue-500"   :
     current?.color === "orange" ? "bg-orange-500" :
-    current?.color === "teal" ? "bg-teal-500" :
-    current?.color === "rose" ? "bg-rose-500" :
-    "bg-slate-500";
+    current?.color === "teal"   ? "bg-teal-500"   :
+    current?.color === "rose"   ? "bg-rose-500"   :
+                                  "bg-slate-500";
 
   const iconClass =
-    current?.color === "green" ? "text-green-600" :
-    current?.color === "blue" ? "text-blue-600" :
+    current?.color === "green"  ? "text-green-600"  :
+    current?.color === "blue"   ? "text-blue-600"   :
     current?.color === "orange" ? "text-orange-600" :
-    current?.color === "teal" ? "text-teal-600" :
-    current?.color === "rose" ? "text-rose-600" :
-    "text-slate-600";
+    current?.color === "teal"   ? "text-teal-600"   :
+    current?.color === "rose"   ? "text-rose-600"   :
+                                  "text-slate-600";
 
   const buildCustomerRows = (data) => data.map((c) => ({
     id: c.id || '',
@@ -148,16 +148,16 @@ export default function ExportCard({ businessId, showNotification, onExport }) {
   }));
 
   const buildSalesAttachmentRows = (data) => data.map((a) => ({
-    invoice_id: a.invoice_id || '',
-    invoice_ref: a.invoice_ref || '',
-    invoice_date: a.invoice_date || '',
+    invoice_id:       a.invoice_id || '',
+    invoice_ref:      a.invoice_ref || '',
+    invoice_date:     a.invoice_date || '',
     invoice_due_date: a.invoice_due_date || '',
-    invoice_total: a.invoice_total ?? '',
-    invoice_status: a.invoice_status || '',
-    attachment_id: a.att_id || '',
-    attachment_name: a.att_name || '',
-    attachment_size: a.att_size ?? '',
-    date_uploaded: a.att_uploaded || '',
+    invoice_total:    a.invoice_total ?? '',
+    invoice_status:   a.invoice_status || '',
+    attachment_id:    a.att_id || '',
+    attachment_name:  a.att_name || '',
+    attachment_size:  a.att_size ?? '',
+    date_uploaded:    a.att_uploaded || '',
   }));
 
   const colWidths = [
@@ -168,18 +168,15 @@ export default function ExportCard({ businessId, showNotification, onExport }) {
   ];
 
   const handleDownload = async () => {
-    if (!businessId) {
-      showNotification("error", "No business selected.");
-      return;
-    }
+    if (!businessId) { showNotification("error", "No business selected."); return; }
     setDownloading(true);
     try {
       let data;
-      if (selected === "customers") data = await customerService.exportCustomers(businessId);
-      else if (selected === "suppliers") data = await supplierService.exportSuppliers(businessId);
-      else if (selected === "stockItems") data = await stockItemService.exportStockItems(businessId);
-      else if (selected === "accountCodes") data = await accountCodeService.fetchAccountCodes(businessId);
-      else if (selected === "bankAccounts") data = await bankAccountService.fetchBankAccounts(businessId);
+      if      (selected === "customers")        data = await customerService.exportCustomers(businessId);
+      else if (selected === "suppliers")        data = await supplierService.exportSuppliers(businessId);
+      else if (selected === "stockItems")       data = await stockItemService.exportStockItems(businessId);
+      else if (selected === "accountCodes")     data = await accountCodeService.fetchAccountCodes(businessId);
+      else if (selected === "bankAccounts")     data = await bankAccountService.fetchBankAccounts(businessId);
       else if (selected === "salesAttachments") data = await salesService.fetchSalesAttachments(businessId);
 
       if (!data || data.length === 0) {
@@ -188,30 +185,30 @@ export default function ExportCard({ businessId, showNotification, onExport }) {
       }
 
       const rows =
-        selected === "customers" ? buildCustomerRows(data) :
-        selected === "suppliers" ? buildSupplierRows(data) :
-        selected === "stockItems" ? buildStockItemRows(data) :
-        selected === "accountCodes" ? buildAccountCodeRows(data) :
-        selected === "bankAccounts" ? buildBankAccountRows(data) :
-        buildSalesAttachmentRows(data);
+        selected === "customers"        ? buildCustomerRows(data)          :
+        selected === "suppliers"        ? buildSupplierRows(data)          :
+        selected === "stockItems"       ? buildStockItemRows(data)         :
+        selected === "accountCodes"     ? buildAccountCodeRows(data)       :
+        selected === "bankAccounts"     ? buildBankAccountRows(data)       :
+                                          buildSalesAttachmentRows(data);
 
       const sheetName =
-        selected === "customers" ? "Customers" :
-        selected === "suppliers" ? "Suppliers" :
-        selected === "stockItems" ? "Stock Items" :
-        selected === "accountCodes" ? "Account Codes" :
-        selected === "bankAccounts" ? "Bank Accounts" :
-        "Sales Attachments";
+        selected === "customers"        ? "Customers"        :
+        selected === "suppliers"        ? "Suppliers"        :
+        selected === "stockItems"       ? "Stock Items"      :
+        selected === "accountCodes"     ? "Account Codes"    :
+        selected === "bankAccounts"     ? "Bank Accounts"    :
+                                          "Sales Attachments";
 
-      const fileName = `${selected}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      const fileName    = `${selected}_${new Date().toISOString().slice(0, 10)}.xlsx`;
 
       const headerColor =
-        selected === "customers" ? "22C55E" :
-        selected === "suppliers" ? "3B82F6" :
-        selected === "stockItems" ? "F97316" :
-        selected === "accountCodes" ? "14B8A6" :
-        selected === "bankAccounts" ? "64748B" :
-        "F43F5E";
+        selected === "customers"        ? "22C55E" :
+        selected === "suppliers"        ? "3B82F6" :
+        selected === "stockItems"       ? "F97316" :
+        selected === "accountCodes"     ? "14B8A6" :
+        selected === "bankAccounts"     ? "64748B" :
+                                          "F43F5E";
 
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.json_to_sheet(rows);
@@ -231,8 +228,10 @@ export default function ExportCard({ businessId, showNotification, onExport }) {
       XLSX.utils.book_append_sheet(wb, ws, sheetName);
       XLSX.writeFile(wb, fileName);
 
-      const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      if (onExport) onExport(now);
+      // ── Notify parent — pass ISO timestamp for dashboard stats ──────────
+      const isoNow = new Date().toISOString();
+      if (onExport)     onExport(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+      if (onExportDone) onExportDone(isoNow);
 
       showNotification("success", `✅ ${data.length} ${current.label} exported to Excel!`);
     } catch (err) {
@@ -244,16 +243,17 @@ export default function ExportCard({ businessId, showNotification, onExport }) {
   };
 
   const getDotClass = (color) =>
-    color === "green" ? "bg-green-500" :
-    color === "blue" ? "bg-blue-500" :
+    color === "green"  ? "bg-green-500"  :
+    color === "blue"   ? "bg-blue-500"   :
     color === "orange" ? "bg-orange-500" :
-    color === "teal" ? "bg-teal-500" :
-    color === "rose" ? "bg-rose-500" :
-    "bg-slate-500";
+    color === "teal"   ? "bg-teal-500"   :
+    color === "rose"   ? "bg-rose-500"   :
+                         "bg-slate-500";
 
   return (
     <div className="grid lg:grid-cols-3 gap-6">
 
+      {/* Main Export Card */}
       <div className="lg:col-span-2 bg-white rounded-xl shadow-md p-8 border border-gray-200">
         <div className="flex items-center gap-4 mb-6">
           <div className={`${iconClass.replace('text-', 'bg-').replace('600', '50')} p-4 rounded-xl`}>
@@ -276,9 +276,7 @@ export default function ExportCard({ businessId, showNotification, onExport }) {
         </div>
 
         <div className="space-y-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Select Data Type
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Select Data Type</label>
 
           <div className="relative">
             <button
@@ -331,6 +329,7 @@ export default function ExportCard({ businessId, showNotification, onExport }) {
         </div>
       </div>
 
+      {/* Right sidebar */}
       <div className="space-y-6">
 
         <div className="bg-gradient-to-br from-emerald-50 to-green-100 rounded-xl p-6 border border-green-200 shadow-md">
