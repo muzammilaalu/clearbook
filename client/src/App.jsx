@@ -3,6 +3,7 @@ import LoginPage from './Pages/LoginPage';
 import DashboardPage from './Pages/DashboardPage';
 import Loading from './components/Loading';
 import { authService } from './services/api';
+import Footer from './components/footer';
 
 
 
@@ -80,7 +81,9 @@ function App() {
         <DashboardPage onLogout={handleLogout} />
       </div>
 
-      {/* Footer */}
+      {/* Footer */
+      <Footer/>
+      }
       
 
     </div>
