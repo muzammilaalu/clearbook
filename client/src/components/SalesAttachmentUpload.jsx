@@ -86,57 +86,110 @@ export default function SalesAttachmentUpload({ businessId, showNotification }) 
   };
 
   // ── Step 3: Upload all matched rows ──────────────────────────────────
-  const handleUpload = async () => {
-    if (!businessId) { showNotification('error', 'No business selected.'); return; }
+const handleUpload = async () => {
+  if (!businessId) {
+    showNotification('error', 'No business selected.');
+    return;
+  }
 
-    const readyRows = mappingRows.filter(r => r.status === 'matched' && r.file_data_base64);
-    if (readyRows.length === 0) {
-      showNotification('error', 'No matched files to upload. Please select files first.');
-      return;
-    }
+  const readyRows = mappingRows.filter(
+    r => r.status === 'matched' && r.file_data_base64
+  );
 
-    setUploading(true);
-    setMappingRows(prev => prev.map(r =>
+  if (readyRows.length === 0) {
+    showNotification('error', 'No matched files to upload. Please select files first.');
+    return;
+  }
+
+  setUploading(true);
+
+  // Set uploading status
+  setMappingRows(prev =>
+    prev.map(r =>
       r.status === 'matched' ? { ...r, status: 'uploading' } : r
-    ));
+    )
+  );
 
-    try {
-      const payload = readyRows.map(r => ({
-        invoice_ref:      r.invoice_id,
-        file_name:        r.file_name,
+  try {
+    const chunkSize = 10;
+
+    let finalSummary = {
+      total: readyRows.length,
+      created: 0,
+      failed: 0,
+    };
+
+    let allErrors = [];
+
+    // 🔥 BATCH LOOP
+    for (let i = 0; i < readyRows.length; i += chunkSize) {
+      const chunk = readyRows.slice(i, i + chunkSize);
+
+      const payload = chunk.map(r => ({
+        invoice_ref: r.invoice_id,
+        file_name: r.file_name,
         file_data_base64: r.file_data_base64,
       }));
 
-      const result = await salesService.uploadSalesAttachments(businessId, payload);
+      try {
+        const result = await salesService.uploadSalesAttachments(
+          businessId,
+          payload
+        );
 
-      // Update statuses
-      const errorMap = {};
-      (result.errors || []).forEach(e => {
-        errorMap[e.invoice_ref + '_' + e.file_name] = e.error;
-      });
+        finalSummary.created += result.summary.created;
+        finalSummary.failed += result.summary.failed;
 
-      setMappingRows(prev => prev.map(r => {
+        allErrors.push(...(result.errors || []));
+      } catch (err) {
+        console.error('Chunk failed:', err);
+        finalSummary.failed += chunk.length;
+      }
+    }
+
+    // 🔥 ERROR MAP
+    const errorMap = {};
+    allErrors.forEach(e => {
+      errorMap[e.invoice_ref + '_' + e.file_name] = e.error;
+    });
+
+    // 🔥 UPDATE UI STATUS
+    setMappingRows(prev =>
+      prev.map(r => {
         if (r.status !== 'uploading') return r;
+
         const key = r.invoice_id + '_' + r.file_name;
+
         return errorMap[key]
           ? { ...r, status: 'error', error: errorMap[key] }
           : { ...r, status: 'success' };
-      }));
+      })
+    );
 
-      setResults(result.summary);
-      showNotification(
-        result.summary.failed === 0 ? 'success' : 'error',
-        `✅ ${result.summary.created} uploaded, ❌ ${result.summary.failed} failed`
-      );
-    } catch {
-      showNotification('error', 'Upload failed.');
-      setMappingRows(prev => prev.map(r =>
-        r.status === 'uploading' ? { ...r, status: 'error', error: 'Upload failed' } : r
-      ));
-    } finally {
-      setUploading(false);
-    }
-  };
+    // 🔥 FINAL RESULT
+    setResults(finalSummary);
+
+    showNotification(
+      finalSummary.failed === 0 ? 'success' : 'error',
+      `✅ ${finalSummary.created} uploaded, ❌ ${finalSummary.failed} failed`
+    );
+
+  } catch (err) {
+    console.error(err);
+
+    showNotification('error', 'Upload failed.');
+
+    setMappingRows(prev =>
+      prev.map(r =>
+        r.status === 'uploading'
+          ? { ...r, status: 'error', error: 'Upload failed' }
+          : r
+      )
+    );
+  } finally {
+    setUploading(false);
+  }
+};
 
   // ── Download template ──────────────────────────────────────────────────
   const downloadTemplate = () => {
