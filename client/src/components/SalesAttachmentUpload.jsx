@@ -5,7 +5,7 @@ import { salesService } from '../services/api';
 
 // ── ClearBooks allowed file types ────────────────────────────────────────
 const ALLOWED_EXTENSIONS = new Set([
-  'png','gif','jpg','jpeg','tif',
+  'png','gif','jpg','jpeg','tiff',
   'pdf','doc','docx','xls','xlsx',
   'ppt','pptx','txt','rtf','odt','ods','csv'
 ]);
@@ -16,6 +16,47 @@ function getExt(filename) {
 
 function isAllowed(filename) {
   return ALLOWED_EXTENSIONS.has(getExt(filename));
+}
+
+// ── Export errors to Excel ───────────────────────────────────────────────
+function exportAttachmentErrors(errors, date) {
+  if (!errors || errors.length === 0) return;
+
+  const rows = errors.map(e => ({
+    invoice_id:  e.invoice_ref || '',
+    file_name:   e.file_name   || '',
+    error:       e.error       || '',
+  }));
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(rows);
+
+  // Column widths
+  ws['!cols'] = [{ wch: 16 }, { wch: 30 }, { wch: 60 }];
+
+  // Style header row
+  const headerStyle = {
+    font:      { bold: true, color: { rgb: 'FFFFFF' } },
+    fill:      { fgColor: { rgb: 'E11D48' } },
+    alignment: { horizontal: 'center' },
+  };
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  for (let C = range.s.c; C <= range.e.c; C++) {
+    const addr = XLSX.utils.encode_cell({ r: 0, c: C });
+    if (ws[addr]) ws[addr].s = headerStyle;
+  }
+
+  // Style error rows — light red background
+  const errorStyle = { fill: { fgColor: { rgb: 'FEE2E2' } } };
+  for (let R = 1; R <= range.e.r; R++) {
+    for (let C = range.s.c; C <= range.e.c; C++) {
+      const addr = XLSX.utils.encode_cell({ r: R, c: C });
+      if (ws[addr]) ws[addr].s = errorStyle;
+    }
+  }
+
+  XLSX.utils.book_append_sheet(wb, ws, 'Attachment Errors');
+  XLSX.writeFile(wb, `attachment_errors_${date}.xlsx`);
 }
 
 export default function SalesAttachmentUpload({ businessId, showNotification }) {
@@ -110,7 +151,8 @@ export default function SalesAttachmentUpload({ businessId, showNotification }) 
   // ── Step 3: Upload in batches of 5 ───────────────────────────────────
   const BATCH_SIZE = 5;
 
- const handleUpload = async () => {
+  
+const handleUpload = async () => {
   if (!businessId) {
     showNotification('error', 'No business selected.');
     return;
@@ -406,7 +448,6 @@ export default function SalesAttachmentUpload({ businessId, showNotification }) 
     </div>
   );
 }
-
 
 
 // const handleUpload = async () => {
