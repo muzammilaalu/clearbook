@@ -235,6 +235,11 @@ const handleUpload = async () => {
     // 🔥 FINAL RESULT
     setResults(finalSummary);
 
+    if (allErrors.length > 0) {
+  const today = new Date().toISOString().slice(0, 10);
+  exportAttachmentErrors(allErrors, today);
+}
+
     showNotification(
       finalSummary.failed === 0 ? 'success' : 'error',
       `✅ ${finalSummary.created} uploaded, ❌ ${finalSummary.failed} failed`
