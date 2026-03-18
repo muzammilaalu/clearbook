@@ -5,7 +5,7 @@ import { salesService } from '../services/api';
 
 // ── ClearBooks allowed file types ────────────────────────────────────────
 const ALLOWED_EXTENSIONS = new Set([
-  'png','gif','jpg','jpeg','tiff',
+  'png','gif','jpg','jpeg','tif',
   'pdf','doc','docx','xls','xlsx',
   'ppt','pptx','txt','rtf','odt','ods','csv'
 ]);
