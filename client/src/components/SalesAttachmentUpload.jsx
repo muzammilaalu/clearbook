@@ -3,6 +3,21 @@ import { Upload, FileUp, CheckCircle, XCircle, Paperclip, Download, Info, Refres
 import * as XLSX from 'xlsx';
 import { salesService } from '../services/api';
 
+// ── ClearBooks allowed file types ────────────────────────────────────────
+const ALLOWED_EXTENSIONS = new Set([
+  'png','gif','jpg','jpeg','tiff',
+  'pdf','doc','docx','xls','xlsx',
+  'ppt','pptx','txt','rtf','odt','ods','csv'
+]);
+
+function getExt(filename) {
+  return filename.split('.').pop().toLowerCase();
+}
+
+function isAllowed(filename) {
+  return ALLOWED_EXTENSIONS.has(getExt(filename));
+}
+
 export default function SalesAttachmentUpload({ businessId, showNotification }) {
   const [mappingRows,  setMappingRows]  = useState([]); // [{ invoice_id, file_name, file, status, error }]
   const [uploading,    setUploading]    = useState(false);
@@ -45,9 +60,16 @@ export default function SalesAttachmentUpload({ businessId, showNotification }) 
     const selectedFiles = Array.from(e.target.files);
     if (!selectedFiles.length) return;
 
+    // Filter out disallowed extensions
+    const disallowed = selectedFiles.filter(f => !isAllowed(f.name));
+    if (disallowed.length > 0) {
+      showNotification('error', `❌ ${disallowed.length} file(s) not allowed: ${disallowed.map(f => f.name).join(', ')}`);
+    }
+    const allowedFiles = selectedFiles.filter(f => isAllowed(f.name));
+
     // Build filename → file map (case-insensitive)
     const fileMap = {};
-    selectedFiles.forEach(f => {
+    allowedFiles.forEach(f => {
       fileMap[f.name.toLowerCase()] = f;
     });
 
@@ -85,8 +107,10 @@ export default function SalesAttachmentUpload({ businessId, showNotification }) 
     }
   };
 
-  // ── Step 3: Upload all matched rows ──────────────────────────────────
-const handleUpload = async () => {
+  // ── Step 3: Upload in batches of 5 ───────────────────────────────────
+  const BATCH_SIZE = 5;
+
+ const handleUpload = async () => {
   if (!businessId) {
     showNotification('error', 'No business selected.');
     return;
@@ -258,12 +282,13 @@ const handleUpload = async () => {
         <Info size={15} className="text-blue-600 flex-shrink-0 mt-0.5" />
         <div className="text-xs text-blue-800">
           <p className="font-semibold mb-1">How it works:</p>
-          <ol className="space-y-0.5 list-decimal list-inside text-blue-700">
+          <ol className="space-y-0.5 list-decimal list-inside text-blue-700 mb-2">
             <li>Download template → fill <strong>invoice_id</strong> and <strong>file_name</strong></li>
             <li>Upload the filled Excel mapping file</li>
             <li>Select the <strong>folder</strong> containing all attachment files</li>
             <li>Files auto-match by name → click Upload</li>
           </ol>
+          <p className="font-semibold text-blue-700">✅ Allowed: <span className="font-normal">png, gif, jpg, jpeg, tiff, pdf, doc, docx, xls, xlsx, ppt, pptx, txt, rtf, odt, ods, csv</span></p>
         </div>
       </div>
 
@@ -381,3 +406,110 @@ const handleUpload = async () => {
     </div>
   );
 }
+
+
+
+// const handleUpload = async () => {
+//   if (!businessId) {
+//     showNotification('error', 'No business selected.');
+//     return;
+//   }
+
+//   const readyRows = mappingRows.filter(
+//     r => r.status === 'matched' && r.file_data_base64
+//   );
+
+//   if (readyRows.length === 0) {
+//     showNotification('error', 'No matched files to upload. Please select files first.');
+//     return;
+//   }
+
+//   setUploading(true);
+
+//   // Set uploading status
+//   setMappingRows(prev =>
+//     prev.map(r =>
+//       r.status === 'matched' ? { ...r, status: 'uploading' } : r
+//     )
+//   );
+
+//   try {
+//     const chunkSize = 10;
+
+//     let finalSummary = {
+//       total: readyRows.length,
+//       created: 0,
+//       failed: 0,
+//     };
+
+//     let allErrors = [];
+
+//     // 🔥 BATCH LOOP
+//     for (let i = 0; i < readyRows.length; i += chunkSize) {
+//       const chunk = readyRows.slice(i, i + chunkSize);
+
+//       const payload = chunk.map(r => ({
+//         invoice_ref: r.invoice_id,
+//         file_name: r.file_name,
+//         file_data_base64: r.file_data_base64,
+//       }));
+
+//       try {
+//         const result = await salesService.uploadSalesAttachments(
+//           businessId,
+//           payload
+//         );
+
+//         finalSummary.created += result.summary.created;
+//         finalSummary.failed += result.summary.failed;
+
+//         allErrors.push(...(result.errors || []));
+//       } catch (err) {
+//         console.error('Chunk failed:', err);
+//         finalSummary.failed += chunk.length;
+//       }
+//     }
+
+//     // 🔥 ERROR MAP
+//     const errorMap = {};
+//     allErrors.forEach(e => {
+//       errorMap[e.invoice_ref + '_' + e.file_name] = e.error;
+//     });
+
+//     // 🔥 UPDATE UI STATUS
+//     setMappingRows(prev =>
+//       prev.map(r => {
+//         if (r.status !== 'uploading') return r;
+
+//         const key = r.invoice_id + '_' + r.file_name;
+
+//         return errorMap[key]
+//           ? { ...r, status: 'error', error: errorMap[key] }
+//           : { ...r, status: 'success' };
+//       })
+//     );
+
+//     // 🔥 FINAL RESULT
+//     setResults(finalSummary);
+
+//     showNotification(
+//       finalSummary.failed === 0 ? 'success' : 'error',
+//       `✅ ${finalSummary.created} uploaded, ❌ ${finalSummary.failed} failed`
+//     );
+
+//   } catch (err) {
+//     console.error(err);
+
+//     showNotification('error', 'Upload failed.');
+
+//     setMappingRows(prev =>
+//       prev.map(r =>
+//         r.status === 'uploading'
+//           ? { ...r, status: 'error', error: 'Upload failed' }
+//           : r
+//       )
+//     );
+//   } finally {
+//     setUploading(false);
+//   }
+// };
