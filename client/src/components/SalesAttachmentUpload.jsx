@@ -5,7 +5,7 @@ import { salesService } from '../services/api';
 
 // ── ClearBooks allowed file types ────────────────────────────────────────
 const ALLOWED_EXTENSIONS = new Set([
-  'png','gif','jpg','jpeg','tiff',
+  'png','gif','jpg','jpeg','tif',
   'pdf','doc','docx','xls','xlsx',
   'ppt','pptx','txt','rtf','odt','ods','csv'
 ]);
@@ -335,7 +335,7 @@ const handleUpload = async () => {
             <li>Select the <strong>folder</strong> containing all attachment files</li>
             <li>Files auto-match by name → click Upload</li>
           </ol>
-          <p className="font-semibold text-blue-700">✅ Allowed: <span className="font-normal">png, gif, jpg, jpeg, tiff, pdf, doc, docx, xls, xlsx, ppt, pptx, txt, rtf, odt, ods, csv</span></p>
+          <p className="font-semibold text-blue-700">✅ Allowed: <span className="font-normal">png, gif, jpg, jpeg, tif, pdf, doc, docx, xls, xlsx, ppt, pptx, txt, rtf, odt, ods, csv</span></p>
         </div>
       </div>
 
