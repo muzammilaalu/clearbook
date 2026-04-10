@@ -1,53 +1,3 @@
-// import axios from "axios";
-
-// const API_BASE_URL = "http://localhost:5000";
-
-// const api = axios.create({
-//   baseURL: API_BASE_URL,
-//   withCredentials: true,
-// });
-
-// export const authService = {
-//   login: () => {
-//     window.location.href = "http://localhost:5000/auth/login";
-//   },
-//   checkAuth: async () => {
-//     try {
-//       const response = await api.get("/auth/status");
-//       return response.data.authenticated;
-//     } catch {
-//       return false;
-//     }
-//   },
-//   logout: async () => {
-//     await api.get("/auth/logout");
-//   },
-// };
-
-// export const businessService = {
-//   fetchBusinesses: async () => {
-//     const response = await api.get("/businesses");
-//     // Backend returns { success, count, data: [...] }
-//     return response.data.data ?? response.data;
-//   },
-// };
-
-// export const customerService = {
-//   fetchCustomers: async (businessId) => {
-//     const response = await api.get("/customers", {
-//       params: businessId ? { businessId } : {},
-//     });
-//     // Backend returns { success, count, data: [...] }
-//     return response.data.data ?? response.data;
-//   },
-
-//   createCustomer: async (data) => {
-//     const response = await api.post("/customers", data);
-//     // Backend returns { success, message, data: {...} }
-//     return response.data.data ?? response.data;
-//   },
-// };
-
 import axios from "axios";
 
 const API_BASE_URL = "https://clearbook-backend-f9e8.onrender.com"
@@ -197,5 +147,12 @@ export const salesService = {
       { rows }
     );
     return response.data;
+  },
+
+  fetchRefunds: async (businessId) => {
+    const response = await api.get("/sales/refunds", {
+      params: { businessId },
+    });
+    return response.data.data ?? response.data;
   },
 };

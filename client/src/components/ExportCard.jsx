@@ -15,6 +15,7 @@ export default function ExportCard({ businessId, showNotification, onExport, onE
     { value: "accountCodes",     label: "Account Codes",     color: "teal",   desc: "Export chart of accounts structure" },
     { value: "bankAccounts",     label: "Bank Accounts",     color: "slate",  desc: "Export bank account details and settings" },
     { value: "salesAttachments", label: "Sales Attachments", color: "rose",   desc: "Export sales invoice attachments list" },
+    { value: "refunds",          label: "Refunds",           color: "violet", desc: "Export refund payments (negative amounts)" },
   ];
 
   const current = options.find((o) => o.value === selected);
@@ -25,6 +26,7 @@ export default function ExportCard({ businessId, showNotification, onExport, onE
     current?.color === "orange" ? "bg-orange-600 hover:bg-orange-700" :
     current?.color === "teal"   ? "bg-teal-600 hover:bg-teal-700"     :
     current?.color === "rose"   ? "bg-rose-600 hover:bg-rose-700"     :
+    current?.color === "violet" ? "bg-violet-600 hover:bg-violet-700" :
                                   "bg-slate-600 hover:bg-slate-700";
 
   const dotClass =
@@ -33,7 +35,9 @@ export default function ExportCard({ businessId, showNotification, onExport, onE
     current?.color === "orange" ? "bg-orange-500" :
     current?.color === "teal"   ? "bg-teal-500"   :
     current?.color === "rose"   ? "bg-rose-500"   :
-                                  "bg-slate-500";
+    current?.color === "violet" ? "bg-violet-500" :
+             color === "violet" ? "bg-violet-500" :
+                         "bg-slate-500";
 
   const iconClass =
     current?.color === "green"  ? "text-green-600"  :
@@ -41,6 +45,7 @@ export default function ExportCard({ businessId, showNotification, onExport, onE
     current?.color === "orange" ? "text-orange-600" :
     current?.color === "teal"   ? "text-teal-600"   :
     current?.color === "rose"   ? "text-rose-600"   :
+    current?.color === "violet" ? "text-violet-600" :
                                   "text-slate-600";
 
   const buildCustomerRows = (data) => data.map((c) => ({
@@ -160,6 +165,18 @@ export default function ExportCard({ businessId, showNotification, onExport, onE
     date_uploaded:    a.att_uploaded || '',
   }));
 
+  const buildRefundRows = (data) => data.map((p) => ({
+    payment_id:        p.id || '',
+    date:              p.date || '',
+    accounting_date:   p.accountingDate || '',
+    description:       p.description || '',
+    amount:            p.amount ?? '',
+    currency:          p.currency || '',
+    contact_id:        p.contactId || '',
+    bank_account_id:   p.bankAccountId || '',
+    payment_method_id: p.paymentMethodId || '',
+  }));
+
   const colWidths = [
     { wch: 8 }, { wch: 22 }, { wch: 20 }, { wch: 12 }, { wch: 22 }, { wch: 22 }, { wch: 14 }, { wch: 14 },
     { wch: 12 }, { wch: 28 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 22 }, { wch: 15 }, { wch: 15 },
@@ -178,6 +195,7 @@ export default function ExportCard({ businessId, showNotification, onExport, onE
       else if (selected === "accountCodes")     data = await accountCodeService.fetchAccountCodes(businessId);
       else if (selected === "bankAccounts")     data = await bankAccountService.fetchBankAccounts(businessId);
       else if (selected === "salesAttachments") data = await salesService.fetchSalesAttachments(businessId);
+      else if (selected === "refunds")          data = await salesService.fetchRefunds(businessId);
 
       if (!data || data.length === 0) {
         showNotification("error", `No ${current.label} found to export.`);
@@ -190,6 +208,7 @@ export default function ExportCard({ businessId, showNotification, onExport, onE
         selected === "stockItems"       ? buildStockItemRows(data)         :
         selected === "accountCodes"     ? buildAccountCodeRows(data)       :
         selected === "bankAccounts"     ? buildBankAccountRows(data)       :
+        selected === "refunds"          ? buildRefundRows(data)            :
                                           buildSalesAttachmentRows(data);
 
       const sheetName =
@@ -198,6 +217,7 @@ export default function ExportCard({ businessId, showNotification, onExport, onE
         selected === "stockItems"       ? "Stock Items"      :
         selected === "accountCodes"     ? "Account Codes"    :
         selected === "bankAccounts"     ? "Bank Accounts"    :
+        selected === "refunds"          ? "Refunds"             :
                                           "Sales Attachments";
 
       const fileName    = `${selected}_${new Date().toISOString().slice(0, 10)}.xlsx`;
@@ -208,6 +228,7 @@ export default function ExportCard({ businessId, showNotification, onExport, onE
         selected === "stockItems"       ? "F97316" :
         selected === "accountCodes"     ? "14B8A6" :
         selected === "bankAccounts"     ? "64748B" :
+        selected === "refunds"          ? "7C3AED" :
                                           "F43F5E";
 
       const wb = XLSX.utils.book_new();
@@ -248,6 +269,7 @@ export default function ExportCard({ businessId, showNotification, onExport, onE
     color === "orange" ? "bg-orange-500" :
     color === "teal"   ? "bg-teal-500"   :
     color === "rose"   ? "bg-rose-500"   :
+    color === "violet" ? "bg-violet-500" :
                          "bg-slate-500";
 
   return (

@@ -37,7 +37,6 @@ export async function createSale(req, res) {
 }
 
 // GET /sales/attachments?businessId=xxx
-// Fetches ALL invoices then fetches attachments for each
 export async function getSalesAttachments(req, res) {
   const { businessId } = req.query;
   if (!businessId) return res.status(400).json({ success: false, error: 'businessId is required' });
@@ -45,7 +44,6 @@ export async function getSalesAttachments(req, res) {
   try {
     const api = getApiClient(req.session.accessToken, businessId);
 
-    // Step 1 — fetch all invoices (up to 200)
     const { data: salesData } = await api.get('/accounting/sales/invoices', {
       params: { limit: 200, page: 1 },
     });
@@ -55,7 +53,6 @@ export async function getSalesAttachments(req, res) {
       return res.status(200).json({ success: true, count: 0, data: [] });
     }
 
-    // Step 2 — fetch attachments for each invoice (parallel, max 10 at a time)
     const results = [];
     const BATCH = 10;
 
@@ -72,9 +69,9 @@ export async function getSalesAttachments(req, res) {
             return attachments.map(att => ({
               invoice_id:       inv.id,
               invoice_ref:      inv.reference || inv.ref || '',
-              invoice_date:     inv.invoiceDate || inv.invoice_date || '',
-              invoice_due_date: inv.dueDate || inv.due_date || '',
-              invoice_total:    inv.total ?? '',
+              invoice_date:     inv.date || inv.invoiceDate || inv.invoice_date || '',
+              invoice_due_date: inv.dateDue || inv.dueDate || inv.due_date || '',
+              invoice_total:    inv.gross ?? inv.total ?? '',
               invoice_status:   inv.status || '',
               att_id:           att.id,
               att_name:         att.name || '',
@@ -82,7 +79,6 @@ export async function getSalesAttachments(req, res) {
               att_uploaded:     att.dateUploaded || att.date_uploaded || '',
             }));
           } catch {
-            // Invoice has no attachments — skip silently
             return [];
           }
         })
@@ -98,10 +94,7 @@ export async function getSalesAttachments(req, res) {
   }
 }
 
-// ── POST /sales/attachments/upload ────────────────────────────────────────
-// Upload files to invoices by matching invoice_ref
-// Body: { rows: [{ invoice_ref, file_name, file_data_base64 }] }
-// Query: ?businessId=xxx
+// POST /sales/attachments/upload
 export async function uploadSalesAttachment(req, res) {
   const { businessId } = req.query;
   const { rows } = req.body;
@@ -114,7 +107,6 @@ export async function uploadSalesAttachment(req, res) {
   try {
     const api = getApiClient(req.session.accessToken, businessId);
 
-    // Step 1 — fetch all invoices to build ref → id map
     const { data: salesData } = await api.get('/accounting/sales/invoices', {
       params: { limit: 200, page: 1 },
     });
@@ -128,7 +120,6 @@ export async function uploadSalesAttachment(req, res) {
       refMap[String(inv.id)] = inv.id;
     });
 
-    // Step 2 — upload each file
     const summary = { total: rows.length, created: 0, failed: 0 };
     const errors  = [];
 
@@ -174,6 +165,52 @@ export async function uploadSalesAttachment(req, res) {
 
   } catch (err) {
     const { status, message } = parseAxiosError(err);
+    return res.status(status).json({ success: false, error: message });
+  }
+}
+
+// ── GET /sales/refunds?businessId=xxx ─────────────────────────────────────
+// Fetch all payments with negative amount = refunds
+export async function getRefundPayments(req, res) {
+  const { businessId } = req.query;
+  if (!businessId) return res.status(400).json({ success: false, error: 'businessId is required' });
+
+  try {
+    const api = getApiClient(req.session.accessToken, businessId);
+
+    let allPayments = [];
+    let page = 1;
+    let totalPages = 1;
+
+    // ── Fetch all pages ───────────────────────────────────────────────────
+    do {
+      const response = await api.get('/accounting/payments', {
+        params: { limit: 200, page },
+      });
+
+      const payments = Array.isArray(response.data)
+        ? response.data
+        : (response.data?.data ?? []);
+
+      allPayments.push(...payments);
+
+      totalPages = parseInt(response.headers['x-pagination-total-pages'] || '1');
+      page++;
+
+    } while (page <= totalPages);
+
+    // ── Filter negative amounts = refunds ─────────────────────────────────
+    const refunds = allPayments.filter(p => Number(p.amount) < 0);
+
+    return res.status(200).json({
+      success: true,
+      count:   refunds.length,
+      data:    refunds,
+    });
+
+  } catch (err) {
+    const { status, message } = parseAxiosError(err);
+    console.error('[Sales] getRefundPayments error:', message);
     return res.status(status).json({ success: false, error: message });
   }
 }
