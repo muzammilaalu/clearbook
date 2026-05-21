@@ -189,6 +189,7 @@ export default function DashboardPage({ onLogout }) {
               <div>
                 <h1 className="text-lg font-bold text-gray-900">ClearBooks</h1>
                 <p className="text-xs text-gray-500">Data Management Dashboard..</p>
+                <p className="text-xs text-gray-500">Data Management Dashboard..</p>
               </div>
             </div>
 
